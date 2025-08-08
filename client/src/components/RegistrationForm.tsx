@@ -7,12 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-
 
 const RegistrationForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<({
+  const [formData, setFormData] = useState<{
     propertyType: string;
     businessName: string;
     email: string;
@@ -29,11 +27,11 @@ const RegistrationForm = () => {
       baseRate: string;
       currency: string;
       specialOffers: string;
-    },
+    };
     termsAccepted: boolean;
     privacyAccepted: boolean;
     marketingAccepted: boolean;
-  })>({
+  }>({
     propertyType: "",
     businessName: "",
     email: "",
@@ -55,7 +53,24 @@ const RegistrationForm = () => {
     privacyAccepted: false,
     marketingAccepted: false
   });
-  
+
+  // General input change handler for inputs and textareas
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // For pricing nested object changes
+  const handlePricingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      pricing: {
+        ...prev.pricing,
+        [name]: value
+      }
+    }));
+  };
 
   const steps = [
     { id: 1, title: "Property Type", icon: Building2 },
@@ -64,8 +79,8 @@ const RegistrationForm = () => {
     { id: 4, title: "Terms & Conditions", icon: FileText },
   ];
 
-    const propertyTypes = [
-     { value: "hotel", label: "Hotel", icon: Building },
+  const propertyTypes = [
+    { value: "hotel", label: "Hotel", icon: Building },
     { value: "restaurant", label: "Restaurant", icon: ChefHat },
     { value: "guesthouse", label: "Guest House", icon: House },
     { value: "resort", label: "Eco Resort", icon: Mountain },
@@ -96,35 +111,68 @@ const RegistrationForm = () => {
   ];
 
   const handleNext = () => {
-    if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
-    }
+    if (currentStep < 4) setCurrentStep(currentStep + 1);
   };
 
   const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = () => {
-    if (!formData.termsAccepted || !formData.privacyAccepted) {
-      toast("Terms Required", {
-        description: "Please accept the terms and conditions to continue.",
-      });
+  // Submit handler - POST formData to backend
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Only submit on last step (4)
+    if (currentStep !== 4) {
+      setCurrentStep(prev => Math.min(prev + 1, 4));
       return;
     }
 
-    localStorage.setItem('propertyType', formData.propertyType);
+    if (!formData.termsAccepted || !formData.privacyAccepted) {
+      alert("Please accept the Terms & Conditions and Privacy Policy.");
+      return;
+    }
 
-    toast( "Registration Submitted! ", {
-      description: "Redirecting to your Admin Panel...",
-    });
-    console.log("Form submitted:", formData);
-    
-    setTimeout(() => {
-      window.location.href = "/admin";
-    }, 2000);
+    try {
+      const response = await fetch("http://localhost:3000/api/accommodations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Accommodation registered successfully!");
+        console.log("Saved accommodation:", data);
+
+        // Reset form
+        setFormData({
+          propertyType: "",
+          businessName: "",
+          email: "",
+          phone: "",
+          website: "",
+          address: "",
+          city: "",
+          province: "",
+          description: "",
+          certifications: [],
+          amenities: [],
+          images: [],
+          pricing: { baseRate: "", currency: "ZAR", specialOffers: "" },
+          termsAccepted: false,
+          privacyAccepted: false,
+          marketingAccepted: false,
+        });
+        setCurrentStep(1);
+      } else {
+        alert(data.message || "Failed to register accommodation");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("Something went wrong. Please try again later.");
+    }
   };
 
   const renderStep1 = () => (
@@ -162,37 +210,41 @@ const RegistrationForm = () => {
           <Label htmlFor="businessName">Business Name *</Label>
           <Input
             id="businessName"
+            name="businessName"
             placeholder="Enter your business name"
             value={formData.businessName}
-            onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+            onChange={handleChange}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email Address *</Label>
           <Input
             id="email"
+            name="email"
             type="email"
             placeholder="business@example.com"
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={handleChange}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Phone Number *</Label>
           <Input
             id="phone"
+            name="phone"
             placeholder="+1 (555) 123-4567"
             value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            onChange={handleChange}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="website">Website</Label>
           <Input
             id="website"
+            name="website"
             placeholder="https://yourbusiness.com"
             value={formData.website}
-            onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+            onChange={handleChange}
           />
         </div>
       </div>
@@ -201,9 +253,10 @@ const RegistrationForm = () => {
         <Label htmlFor="address">Address *</Label>
         <Input
           id="address"
+          name="address"
           placeholder="Street address"
           value={formData.address}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+          onChange={handleChange}
         />
       </div>
 
@@ -212,14 +265,18 @@ const RegistrationForm = () => {
           <Label htmlFor="city">City *</Label>
           <Input
             id="city"
+            name="city"
             placeholder="City"
             value={formData.city}
-            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+            onChange={handleChange}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="country">Province *</Label>
-          <Select onValueChange={(value) => setFormData({ ...formData, province: value })}>
+          <Label htmlFor="province">Province *</Label>
+          <Select
+            value={formData.province}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, province: value }))}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select Province" />
             </SelectTrigger>
@@ -228,7 +285,7 @@ const RegistrationForm = () => {
               <SelectItem value="FS">Free State</SelectItem>
               <SelectItem value="GP">Gauteng</SelectItem>
               <SelectItem value="KZN">KwaZulu-Natal</SelectItem>
-              <SelectItem value="NC">Northen Cape</SelectItem>
+              <SelectItem value="NC">Northern Cape</SelectItem>
               <SelectItem value="NW">North West</SelectItem>
               <SelectItem value="WC">Western Cape</SelectItem>
             </SelectContent>
@@ -240,10 +297,46 @@ const RegistrationForm = () => {
         <Label htmlFor="description">Business Description</Label>
         <Textarea
           id="description"
+          name="description"
           placeholder="Tell us about your eco-friendly business..."
           value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          onChange={handleChange}
           rows={4}
+        />
+      </div>
+
+      {/* Pricing inputs */}
+      <div className="space-y-2">
+        <Label htmlFor="baseRate">Base Rate</Label>
+        <Input
+          id="baseRate"
+          name="baseRate"
+          placeholder="Base rate"
+          value={formData.pricing.baseRate}
+          onChange={handlePricingChange}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="currency">Currency</Label>
+        <Input
+          id="currency"
+          name="currency"
+          placeholder="Currency"
+          value={formData.pricing.currency}
+          onChange={handlePricingChange}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="specialOffers">Special Offers</Label>
+        <Textarea
+          id="specialOffers"
+          name="specialOffers"
+          placeholder="Special offers"
+          value={formData.pricing.specialOffers}
+          onChange={handlePricingChange}
+          rows={2}
         />
       </div>
     </div>
@@ -261,15 +354,15 @@ const RegistrationForm = () => {
                 checked={formData.certifications.includes(cert)}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    setFormData({
-                      ...formData,
-                      certifications: [...formData.certifications, cert]
-                    });
+                    setFormData(prev => ({
+                      ...prev,
+                      certifications: [...prev.certifications, cert]
+                    }));
                   } else {
-                    setFormData({
-                      ...formData,
-                      certifications: formData.certifications.filter(c => c !== cert)
-                    });
+                    setFormData(prev => ({
+                      ...prev,
+                      certifications: prev.certifications.filter(c => c !== cert)
+                    }));
                   }
                 }}
               />
@@ -289,15 +382,15 @@ const RegistrationForm = () => {
                 checked={formData.amenities.includes(amenity)}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    setFormData({
-                      ...formData,
-                      amenities: [...formData.amenities, amenity]
-                    });
+                    setFormData(prev => ({
+                      ...prev,
+                      amenities: [...prev.amenities, amenity]
+                    }));
                   } else {
-                    setFormData({
-                      ...formData,
-                      amenities: formData.amenities.filter(a => a !== amenity)
-                    });
+                    setFormData(prev => ({
+                      ...prev,
+                      amenities: prev.amenities.filter(a => a !== amenity)
+                    }));
                   }
                 }}
               />
@@ -309,7 +402,6 @@ const RegistrationForm = () => {
     </div>
   );
 
-
   const renderStep4 = () => (
     <div className="space-y-6">
       <div>
@@ -317,32 +409,12 @@ const RegistrationForm = () => {
         <div className="bg-gray-50 rounded-lg p-6 max-h-96 overflow-y-auto mb-6">
           <h4 className="font-semibold mb-3">TerraBook Property Partnership Agreement</h4>
           <div className="space-y-4 text-sm text-gray-700">
-            <p>
-              <strong>1. Property Listing Terms:</strong> By registering your property with GreenInn, 
-              you agree to maintain accurate and up-to-date information about your property, including 
-              availability, pricing, and amenities.
-            </p>
-            <p>
-              <strong>2. Eco-Friendly Standards:</strong> You certify that your property meets our 
-              sustainability standards and will continue to implement eco-friendly practices throughout 
-              our partnership.
-            </p>
-            <p>
-              <strong>3. Guest Services:</strong> You agree to provide excellent service to guests 
-              booked through our platform and respond to inquiries within 24 hours.
-            </p>
-            <p>
-              <strong>4. Payment Terms:</strong> Monthly subscription fees are due on the anniversary 
-              of your registration. No commission is charged on bookings.
-            </p>
-            <p>
-              <strong>5. Cancellation Policy:</strong> Either party may terminate this agreement with 
-              30 days written notice. No early termination fees apply.
-            </p>
-            <p>
-              <strong>6. Data Usage:</strong> We may use your property information for marketing 
-              purposes and to improve our platform services.
-            </p>
+            <p><strong>1. Property Listing Terms:</strong> By registering your property with GreenInn, you agree to maintain accurate and up-to-date information about your property, including availability, pricing, and amenities.</p>
+            <p><strong>2. Eco-Friendly Standards:</strong> You certify that your property meets our sustainability standards and will continue to implement eco-friendly practices throughout our partnership.</p>
+            <p><strong>3. Guest Services:</strong> You agree to provide excellent service to guests booked through our platform and respond to inquiries within 24 hours.</p>
+            <p><strong>4. Payment Terms:</strong> Monthly subscription fees are due on the anniversary of your registration. No commission is charged on bookings.</p>
+            <p><strong>5. Cancellation Policy:</strong> Either party may terminate this agreement with 30 days written notice. No early termination fees apply.</p>
+            <p><strong>6. Data Usage:</strong> We may use your property information for marketing purposes and to improve our platform services.</p>
           </div>
         </div>
 
@@ -351,42 +423,32 @@ const RegistrationForm = () => {
             <Checkbox
               id="terms"
               checked={formData.termsAccepted}
-              onCheckedChange={(checked) => setFormData({ ...formData, termsAccepted: !!checked })}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, termsAccepted: !!checked }))}
             />
-            <Label htmlFor="terms" className="text-sm">
-              I have read and accept the Partnership Terms & Conditions *
-            </Label>
+            <Label htmlFor="terms" className="text-sm">I have read and accept the Partnership Terms & Conditions *</Label>
           </div>
 
           <div className="flex items-start space-x-3">
             <Checkbox
               id="privacy"
               checked={formData.privacyAccepted}
-              onCheckedChange={(checked) => setFormData({ ...formData, privacyAccepted: !!checked })}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, privacyAccepted: !!checked }))}
             />
-            <Label htmlFor="privacy" className="text-sm">
-              I accept the Privacy Policy and Data Processing Agreement *
-            </Label>
+            <Label htmlFor="privacy" className="text-sm">I accept the Privacy Policy and Data Processing Agreement *</Label>
           </div>
 
           <div className="flex items-start space-x-3">
             <Checkbox
               id="marketing"
               checked={formData.marketingAccepted}
-              onCheckedChange={(checked) => setFormData({ ...formData, marketingAccepted: !!checked })}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, marketingAccepted: !!checked }))}
             />
-            <Label htmlFor="marketing" className="text-sm">
-              I consent to receive marketing communications from TerraBook (optional)
-            </Label>
+            <Label htmlFor="marketing" className="text-sm">I consent to receive marketing communications from TerraBook (optional)</Label>
           </div>
         </div>
 
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-800">
-            <strong>🌱 Welcome to the TerraBook Family!</strong> Once approved, you'll receive 
-            access to your dashboard and our support team will help you optimize your listing 
-            for maximum visibility.
-          </p>
+          <p className="text-sm text-green-800"><strong>🌱 Welcome to the TerraBook Family!</strong> Once approved, you'll receive access to your dashboard and our support team will help you optimize your listing for maximum visibility.</p>
         </div>
       </div>
     </div>
@@ -400,71 +462,66 @@ const RegistrationForm = () => {
           <p className="text-lg text-gray-600">Join our network of sustainable businesses in 4 simple steps</p>
         </div>
 
-        <Card className="shadow-xl border-0.5">
-          <CardHeader className="bg text-green-700 rounded-lg">
-            {/* Progress Steps */}
-            <div className="flex justify-between items-center mb-6 overflow-x-auto">
-              {steps.map((step, index) => (
-                <div key={step.id} className="flex items-center min-w-0">
-                  <div
-                    className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                      currentStep >= step.id
-                        ? "bg-green-400 text-white"
-                        : "bg-white text-green-600"
-                    }`}
-                  >
-                    <step.icon className="h-5 w-5" />
-                  </div>
-                  {index < steps.length - 1 && (
+        <form onSubmit={handleSubmit}>
+          <Card className="shadow-xl border-0.5">
+            <CardHeader className="bg text-green-700 rounded-lg">
+              {/* Progress Steps */}
+              <div className="flex justify-between items-center mb-6 overflow-x-auto">
+                {steps.map((step, index) => (
+                  <div key={step.id} className="flex items-center min-w-0">
                     <div
-                      className={`w-8 h-1 mx-2 ${
-                        currentStep > step.id ? "bg-white" : "bg-green-400"
+                      className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                        currentStep >= step.id ? "bg-green-400 text-white" : "bg-white text-green-600"
                       }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-            <CardTitle className="text-center">
-              Step {currentStep}: {steps[currentStep - 1].title}
-            </CardTitle>
-          </CardHeader>
+                    >
+                      <step.icon className="h-5 w-5" />
+                    </div>
+                    {index < steps.length - 1 && (
+                      <div
+                        className={`w-8 h-1 mx-2 ${currentStep > step.id ? "bg-white" : "bg-green-400"}`}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <CardTitle className="text-center">
+                Step {currentStep}: {steps[currentStep - 1].title}
+              </CardTitle>
+            </CardHeader>
 
-          <CardContent className="p-8">
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-            {currentStep === 4 && renderStep4()}
+            <CardContent className="p-8">
+              {currentStep === 1 && renderStep1()}
+              {currentStep === 2 && renderStep2()}
+              {currentStep === 3 && renderStep3()}
+              {currentStep === 4 && renderStep4()}
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={currentStep === 1}
-              >
-                Previous
-              </Button>
-              {currentStep < 4 ? (
-                <Button
-                  onClick={handleNext}
-                  disabled={currentStep === 1 && !formData.propertyType}
-                  className="bg-gradient-green"
-                >
-                  Next Step
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-8">
+                <Button variant="outline" onClick={handlePrevious} disabled={currentStep === 1}>
+                  Previous
                 </Button>
-              ) : (
-                <Button 
-                  onClick={handleSubmit} 
-                  className="bg-gradient-green"
-                  disabled={!formData.termsAccepted || !formData.privacyAccepted}
-                >
-                  Submit Registration
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                {currentStep < 4 ? (
+                  <Button
+                    type="button"  // Prevent form submit on Next
+                    onClick={handleNext}
+                    disabled={currentStep === 1 && !formData.propertyType}
+                    className="bg-gradient-green"
+                  >
+                    Next Step
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"  // Submit form on last step
+                    className="bg-gradient-green"
+                    disabled={!formData.termsAccepted || !formData.privacyAccepted}
+                  >
+                    Submit Registration
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </form>
       </div>
     </section>
   );

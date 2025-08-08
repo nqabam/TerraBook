@@ -29,8 +29,17 @@ const BottomNavigation = () => {
   { id: 'services', label: 'Services', icon: Briefcase, path: '/services' },
   { id: 'contact', label: 'Contact', icon: Phone, path: '/contact' },
   ...(user
-    ? [{ id: 'profile', label: 'Profile', icon: User, path: '/profile' }]
-    : []),
+  ? [{
+      id: 'profile',
+      label: 'Profile',
+      icon: User,
+      action: () => {
+        const hasRegisteredProperty = user?.publicMetadata?.hasRegisteredProperty;
+        navigate(hasRegisteredProperty ? '/profile' : '/register');
+      },
+    }]
+  : []),
+
 ];
 
 

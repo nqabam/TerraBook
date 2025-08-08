@@ -9,7 +9,7 @@
     "start": "node server.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Nqaba Mdedelwa",
   "license": "ISC",
   "dependencies": {
     "@clerk/express": "^1.7.15",
