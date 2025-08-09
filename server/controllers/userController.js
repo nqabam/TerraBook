@@ -1,4 +1,4 @@
-import User from "../models/userModel.js";
+import User from "../models/User.js";
 
 // @desc    Create or update a user (for Clerk sync or registration)
 export const createOrUpdateUser = async (req, res) => {
