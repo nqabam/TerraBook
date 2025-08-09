@@ -23,20 +23,19 @@ const Profile = () => {
     address: "123 Mountain View Dr, Green Valley, GP 1618",
     description: "An eco-friendly mountain resort committed to sustainable tourism and environmental conservation.",
     certifications: ["LEED Gold", "Green Key", "EarthCheck"],
-    amenities: ["Solar Panels", "Rainwater Harvesting", "Organic Garden", "EV Charging"]
+    amenities: ["Solar Panels", "Rainwater Harvesting", "Organic Garden", "EV Charging"],
   });
 
   const [stats] = useState({
     profileViews: 1247,
     totalBookings: 89,
     totalInquiries: 156,
-    rating: 4.8
+    rating: 4.8,
   });
-
 
   const handleSave = () => {
     setIsEditing(false);
-    toast("Profile Updated",{
+    toast("Profile Updated", {
       description: "Your business profile has been successfully updated.",
     });
   };
@@ -68,16 +67,12 @@ const Profile = () => {
             <div className="relative inline-block mb-4">
               <div className="w-24 h-24 bg-green-600 rounded-full flex items-center justify-center overflow-hidden">
                 {profileImage ? (
-                  <img 
-                    src={profileImage} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <User className="h-12 w-12 text-white" />
                 )}
               </div>
-              <button 
+              <button
                 onClick={triggerFileInput}
                 className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg border hover:bg-gray-50 transition-colors"
               >
@@ -93,13 +88,10 @@ const Profile = () => {
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{profileData.businessName}</h1>
             <p className="text-gray-600">Property Owner Dashboard</p>
-            
+
             {/* Admin Panel Button */}
             <div className="mt-4">
-              <Button
-                onClick={() => navigate('/admin')}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
+              <Button onClick={() => navigate("/admin")} className="bg-green-600 hover:bg-green-700 text-white">
                 <Settings className="h-4 w-4 mr-2" />
                 Admin Panel
               </Button>
@@ -139,10 +131,7 @@ const Profile = () => {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Business Information</CardTitle>
-                <Button
-                  variant="outline"
-                  onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-                >
+                <Button variant="outline" onClick={() => (isEditing ? handleSave() : setIsEditing(true))}>
                   {isEditing ? <Save className="h-4 w-4 mr-2" /> : <Edit3 className="h-4 w-4 mr-2" />}
                   {isEditing ? "Save Changes" : "Edit Profile"}
                 </Button>
@@ -155,7 +144,7 @@ const Profile = () => {
                   <Input
                     id="businessName"
                     value={profileData.businessName}
-                    onChange={(e) => setProfileData({...profileData, businessName: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, businessName: e.target.value })}
                     disabled={!isEditing}
                   />
                 </div>
@@ -164,7 +153,7 @@ const Profile = () => {
                   <Input
                     id="ownerName"
                     value={profileData.ownerName}
-                    onChange={(e) => setProfileData({...profileData, ownerName: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, ownerName: e.target.value })}
                     disabled={!isEditing}
                   />
                 </div>
@@ -179,7 +168,7 @@ const Profile = () => {
                       id="email"
                       type="email"
                       value={profileData.email}
-                      onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                      onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                       disabled={!isEditing}
                       className="flex-1"
                     />
@@ -192,7 +181,7 @@ const Profile = () => {
                     <Input
                       id="phone"
                       value={profileData.phone}
-                      onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                      onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                       disabled={!isEditing}
                       className="flex-1"
                     />
@@ -207,7 +196,7 @@ const Profile = () => {
                   <Input
                     id="website"
                     value={profileData.website}
-                    onChange={(e) => setProfileData({...profileData, website: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
                     disabled={!isEditing}
                     className="flex-1"
                   />
@@ -221,7 +210,7 @@ const Profile = () => {
                   <Input
                     id="address"
                     value={profileData.address}
-                    onChange={(e) => setProfileData({...profileData, address: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
                     disabled={!isEditing}
                     className="flex-1"
                   />
@@ -233,7 +222,7 @@ const Profile = () => {
                 <Textarea
                   id="description"
                   value={profileData.description}
-                  onChange={(e) => setProfileData({...profileData, description: e.target.value})}
+                  onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
                   disabled={!isEditing}
                   rows={4}
                 />

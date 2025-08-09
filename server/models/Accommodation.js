@@ -12,6 +12,7 @@ const AccommodationSchema = new mongoose.Schema(
     businessName: { type: String, required: true },
     email: { type: String, required: true, lowercase: true, trim: true },
     phone: { type: String, required: true },
+    owner: { type: String, required: true, ref: "User" },
     website: { type: String },
     address: { type: String, required: true },
     city: { type: String, required: true },

@@ -1,14 +1,9 @@
 import express from "express";
-import {
-  registerAccommodation,
-  getAllAccommodations,
-  getAccommodationById
-} from "../controllers/accommodationController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { registerAccommodation } from "../controllers/accommodationController.js";
 
-const router = express.Router();
+const accommodationRouter = express.Router();
 
-router.post("/", registerAccommodation);
-router.get("/", getAllAccommodations);
-router.get("/:id", getAccommodationById);
+accommodationRouter.post('/', protect, registerAccommodation)
 
-export default router;
+export default accommodationRouter;
