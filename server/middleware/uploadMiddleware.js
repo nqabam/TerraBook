@@ -1,5 +1,5 @@
-import mutle from "mutler";
+import multer from "multer";
 
-const upload = mutler({storage: mutler.diskStorage({})})
+const upload = multer({storage: multer.diskStorage({})})
 
 export default upload;

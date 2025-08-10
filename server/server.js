@@ -7,6 +7,8 @@ import clerkWebhooks from "./controllers/clerkWebHooks.js";
 import accommodationRouter from "./routes/accommodationRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import connectCloudinary from "./configs/cloudinary.js";
+import roomRouter from "./routes/roomRoutes.js";
+import bookingRouter from "./routes/bookingRoutes.js";
 
 connectDB()
 connectCloudinary()
@@ -22,8 +24,10 @@ app.use(clerkMiddleware())
 app.use("/api/clerk", clerkWebhooks);
 
 app.get('/', (req, res) => res.send("API is Working"))
-app.use('/api/use', userRouter)
-app.use("/api/accommodations", accommodationRouter);
+app.use('/api/user', userRouter)
+app.use("/api/accommodation", accommodationRouter)
+app.use('/api/room', roomRouter)
+app.use('/api/bookings', bookingRouter)
 
 const PORT = process.env.PORT || 3000;
 
