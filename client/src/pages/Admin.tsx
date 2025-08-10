@@ -1,7 +1,4 @@
 import { useState, useEffect } from "react";
-import { User, } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AccommodationAdminSidebar from "@/components/AccommodationAdminSidebar";
 import DiningAdminSidebar from "@/components/DiningAdminSidebar";
@@ -18,17 +15,19 @@ import RestaurantSettings from "@/components/RestaurantSettings";
 import ReservationsManagement from "@/components/ReservationManagement";
 import GuestManagement from "@/components/GuestManagement";
 import PropertySettings from "@/components/PropertySettings";
+import AdminTopNavigation from "@/components/AdminTopNavigation";
 import { getPropertyType, getPropertyCategory } from "@/utils/propertyTypeUtils";
 
 const Admin = () => {
   const [activeView, setActiveView] = useState("dashboard");
   const [propertyCategory, setPropertyCategory] = useState<'accommodation' | 'dining' | 'unknown'>('unknown');
-  const navigate = useNavigate();
+  const [currentPropertyType, setCurrentPropertyType] = useState<string>('');
 
   useEffect(() => {
     const propertyType = getPropertyType();
     if (propertyType) {
       setPropertyCategory(getPropertyCategory(propertyType));
+      setCurrentPropertyType(propertyType);
     }
   }, []);
 
@@ -99,25 +98,22 @@ const Admin = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         {renderSidebar()}
-        <main className="flex-1 p-6 bg-gray-50">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-4">
+        <main className="flex-1 bg-gray-50">
+          <AdminTopNavigation 
+            businessName="My Business"
+            propertyType={currentPropertyType}
+            onSettingsClick={() => setActiveView('settings')}
+          />
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-6">
               <SidebarTrigger />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{getAdminTitle()}</h1>
                 <p className="text-gray-600">{getAdminDescription()}</p>
               </div>
             </div>
-            <Button
-              onClick={() => navigate('/profile')}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <User className="h-4 w-4" />
-              Profile
-            </Button>
+            {renderContent()}
           </div>
-          {renderContent()}
         </main>
       </div>
     </SidebarProvider>

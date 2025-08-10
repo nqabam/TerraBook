@@ -35,7 +35,7 @@ const BottomNavigation = () => {
       icon: User,
       action: () => {
         const hasRegisteredProperty = user?.publicMetadata?.hasRegisteredProperty;
-        navigate(hasRegisteredProperty ? '/profile' : '/register');
+        navigate(hasRegisteredProperty ? '/profile' : '/profile');
       },
     }]
   : []),

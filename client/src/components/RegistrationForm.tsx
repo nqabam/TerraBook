@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Building2, MapPin, Check, FileText, Building, ChefHat, House, Mountain, Store } from "lucide-react";
+import { Building, MapPin, Check, FileText, House, ChefHat, Mountain, Store, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,12 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
+import { toast } from "sonner";
 
 const RegistrationForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState<({
+  type FormData = {
     propertyType: string;
     businessName: string;
     email: string;
@@ -25,16 +23,12 @@ const RegistrationForm = () => {
     description: string;
     certifications: string[];
     amenities: string[];
-    images: string[];
-    pricing: {
-      baseRate: string;
-      currency: string;
-      specialOffers: string;
-    },
     termsAccepted: boolean;
     privacyAccepted: boolean;
     marketingAccepted: boolean;
-  })>({
+  };
+
+  const [formData, setFormData] = useState<FormData>({
     propertyType: "",
     businessName: "",
     email: "",
@@ -46,17 +40,10 @@ const RegistrationForm = () => {
     description: "",
     certifications: [],
     amenities: [],
-    images: [],
-    pricing: {
-      baseRate: "",
-      currency: "ZAR",
-      specialOffers: ""
-    },
     termsAccepted: false,
     privacyAccepted: false,
     marketingAccepted: false
   });
-  
 
   const steps = [
     { id: 1, title: "Property Type", icon: Building2 },
@@ -65,8 +52,8 @@ const RegistrationForm = () => {
     { id: 4, title: "Terms & Conditions", icon: FileText },
   ];
 
-    const propertyTypes = [
-     { value: "hotel", label: "Hotel", icon: Building },
+  const propertyTypes = [
+    { value: "hotel", label: "Hotel", icon: Building },
     { value: "restaurant", label: "Restaurant", icon: ChefHat },
     { value: "guesthouse", label: "Guest House", icon: House },
     { value: "resort", label: "Eco Resort", icon: Mountain },
@@ -108,54 +95,55 @@ const RegistrationForm = () => {
     }
   };
 
-  
-
-  const handleSubmit = async (e: { preventDefault: () => void; }) => {
-  e.preventDefault();
+  const handleSubmit = async () => {
+  if (!formData.termsAccepted || !formData.privacyAccepted) {
+    toast("Terms Required", {
+      description: "Please accept the terms and conditions to continue.",
+    });
+    return;
+  }
 
   try {
-    const response = await fetch("http://localhost:3000/api/accommodations", {
+    // Get token from localStorage (or wherever you store it)
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("You must be logged in to register property.");
+      return;
+    }
+
+    const fullFormData = {
+      ...formData, // if your backend expects 'province' instead of country
+      pricing: {
+        baseRate: "0",
+        currency: "ZAR",
+        specialOffers: "",
+      },
+    };
+
+    const response = await fetch("/api/accommodations", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,  // Send the token here
       },
-      body: JSON.stringify(formData), // formData is your state holding form inputs
+      body: JSON.stringify(fullFormData),
     });
 
     const data = await response.json();
 
-    if (response.ok) {
-      alert("Accommodation registered successfully!");
-      console.log("Saved accommodation:", data.accommodation);
-      navigate('/admin')
-
-      // Optional: Reset the form
-      setFormData({
-        propertyType: "",
-        businessName: "",
-        email: "",
-        phone: "",
-        website: "",
-        address: "",
-        city: "",
-        province: "",
-        description: "",
-        certifications: [],
-        amenities: [],
-        images: [],
-        pricing: { baseRate: "", currency: "ZAR", specialOffers: "" },
-        termsAccepted: false,
-        privacyAccepted: false,
-        marketingAccepted: false,
-      });
+    if (response.ok && data.success) {
+      toast.success("Registration Successful! Redirecting to your Admin Panel.");
+      localStorage.setItem("propertyType", formData.propertyType);
+      setTimeout(() => (window.location.href = "/admin"), 1500);
     } else {
-      alert(data.message || "Failed to register accommodation");
+      toast.error(data.message || "Failed to register property.");
     }
   } catch (error) {
-    console.error("Error submitting form:", error);
-    alert("Something went wrong. Please try again later.");
+    console.error(error);
+    toast.error("Network or server error.");
   }
 };
+
 
 
   const renderStep1 = () => (
@@ -163,24 +151,27 @@ const RegistrationForm = () => {
       <div>
         <h3 className="text-xl font-semibold mb-4">What type of property do you own?</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {propertyTypes.map((type) => (
-            <div
-              key={type.value}
-              onClick={() => setFormData({ ...formData, propertyType: type.value })}
-              className={`p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-md ${
-                formData.propertyType === type.value
-                  ? "border-green-500 bg-green-50"
-                  : "border-gray-200 hover:border-green-300"
-              }`}
-            >
-              <div className="text-center">
-                <div className="text-3xl mb-2">
-                  <type.icon className="mx-auto w-6 h-6 text-green-500" />
+          {propertyTypes.map((type) => {
+            const IconComponent = type.icon;
+            return (
+              <div
+                key={type.value}
+                onClick={() => setFormData({ ...formData, propertyType: type.value })}
+                className={`p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                  formData.propertyType === type.value
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-200 hover:border-green-300"
+                }`}
+              >
+                <div className="text-center">
+                  <div className="flex justify-center mb-2">
+                    <IconComponent className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div className="font-medium text-gray-800">{type.label}</div>
                 </div>
-                <div className="font-medium text-gray-900">{type.label}</div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -252,16 +243,16 @@ const RegistrationForm = () => {
           <Label htmlFor="country">Province *</Label>
           <Select onValueChange={(value) => setFormData({ ...formData, province: value })}>
             <SelectTrigger>
-              <SelectValue placeholder="Select Province" />
+              <SelectValue placeholder="Select country" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="GP">Gauteng</SelectItem>
+              <SelectItem value="KZN">KwaZulu Natal</SelectItem>
+              <SelectItem value="WC">Western Cape</SelectItem>
+              <SelectItem value="NW">North West</SelectItem>
               <SelectItem value="EC">Eastern Cape</SelectItem>
               <SelectItem value="FS">Free State</SelectItem>
-              <SelectItem value="GP">Gauteng</SelectItem>
-              <SelectItem value="KZN">KwaZulu-Natal</SelectItem>
-              <SelectItem value="NC">Northen Cape</SelectItem>
-              <SelectItem value="NW">North West</SelectItem>
-              <SelectItem value="WC">Western Cape</SelectItem>
+              <SelectItem value="NC">Nothern Cape</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -340,13 +331,13 @@ const RegistrationForm = () => {
     </div>
   );
 
-
   const renderStep4 = () => (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-4">Partnership Terms & Conditions</h3>
+        
         <div className="bg-gray-50 rounded-lg p-6 max-h-96 overflow-y-auto mb-6">
-          <h4 className="font-semibold mb-3">TerraBook Property Partnership Agreement</h4>
+          <h4 className="font-semibold mb-3">GreenInn Property Partnership Agreement</h4>
           <div className="space-y-4 text-sm text-gray-700">
             <p>
               <strong>1. Property Listing Terms:</strong> By registering your property with GreenInn, 
@@ -407,15 +398,15 @@ const RegistrationForm = () => {
               onCheckedChange={(checked) => setFormData({ ...formData, marketingAccepted: !!checked })}
             />
             <Label htmlFor="marketing" className="text-sm">
-              I consent to receive marketing communications from TerraBook (optional)
+              I consent to receive marketing communications from GreenInn (optional)
             </Label>
           </div>
         </div>
 
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <p className="text-sm text-green-800">
-            <strong>🌱 Welcome to the TerraBook Family!</strong> Once approved, you'll receive 
-            access to your dashboard and our support team will help you optimize your listing 
+            <strong>🌱 Welcome to the GreenInn Family!</strong> Once approved, you'll receive 
+            access to your admin panel and our support team will help you optimize your listing 
             for maximum visibility.
           </p>
         </div>
@@ -431,8 +422,8 @@ const RegistrationForm = () => {
           <p className="text-lg text-gray-600">Join our network of sustainable businesses in 4 simple steps</p>
         </div>
 
-        <Card className="shadow-xl border-0.5">
-          <CardHeader className="bg text-green-700 rounded-lg">
+        <Card className="shadow-xl border-0">
+          <CardHeader className="bg-gradient-green text-white rounded-t-lg">
             {/* Progress Steps */}
             <div className="flex justify-between items-center mb-6 overflow-x-auto">
               {steps.map((step, index) => (
@@ -440,8 +431,8 @@ const RegistrationForm = () => {
                   <div
                     className={`flex items-center justify-center w-10 h-10 rounded-full ${
                       currentStep >= step.id
-                        ? "bg-green-400 text-white"
-                        : "bg-white text-green-600"
+                        ? "bg-white text-green-600"
+                        : "bg-green-400 text-white"
                     }`}
                   >
                     <step.icon className="h-5 w-5" />
@@ -501,7 +492,4 @@ const RegistrationForm = () => {
   );
 };
 
-
 export default RegistrationForm;
-
-
