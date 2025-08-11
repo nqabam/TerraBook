@@ -25,7 +25,7 @@ app.use("/api/clerk", clerkWebhooks);
 
 app.get('/', (req, res) => res.send("API is Working"))
 app.use('/api/user', userRouter)
-app.use("/api/accommodation", accommodationRouter)
+app.use('/api/accommodation', accommodationRouter)
 app.use('/api/room', roomRouter)
 app.use('/api/bookings', bookingRouter)
 
