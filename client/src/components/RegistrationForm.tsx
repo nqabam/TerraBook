@@ -8,10 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import { useAppContext } from "@/context/appContext.tsx";
 
 const RegistrationForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { getToken, axios, setIsOwner } = useAppContext();
+
   const [formData, setFormData] = useState<{
     propertyType: string;
     businessName: string;
@@ -128,57 +133,53 @@ const RegistrationForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Only submit on last step (4)
-    if (currentStep !== 4) {
-      setCurrentStep(prev => Math.min(prev + 1, 4));
+    if (!formData.termsAccepted || !formData.privacyAccepted) {
+      toast.error("Please accept the Terms & Conditions and Privacy Policy.");
       return;
     }
 
-    if (!formData.termsAccepted || !formData.privacyAccepted) {
-      alert("Please accept the Terms & Conditions and Privacy Policy.");
-      return;
-    }
+    setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:3000/api/accommodation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+      const token = await getToken();
+      const response = await axios.post("/api/accommodations", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        alert("Accommodation registered successfully!");
-        console.log("Saved accommodation:", data);
+      if (response.status === 200) {
+        localStorage.setItem('propertyType', formData.propertyType);
+        setIsOwner(true);
         navigate('/admin');
 
-        // Reset form
-        setFormData({
-          propertyType: "",
-          businessName: "",
-          email: "",
-          phone: "",
-          website: "",
-          address: "",
-          city: "",
-          province: "",
-          description: "",
-          certifications: [],
-          amenities: [],
-          images: [],
-          pricing: { baseRate: "", currency: "ZAR", specialOffers: "" },
-          termsAccepted: false,
-          privacyAccepted: false,
-          marketingAccepted: false,
+        toast.success("Registration Successful!", {
+          description: "Now you can manage your property on the admin panel",
         });
-        setCurrentStep(1);
+        
+        setTimeout(() => {
+          navigate('/admin');
+        }, 1500);
       } else {
-        alert(data.message || "Failed to register accommodation");
+        throw new Error("Failed to submit registration");
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("Something went wrong. Please try again later.");
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      
+      let errorMessage = "There was an error submitting your registration. Please try again.";
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error("Registration Failed", {
+        description: errorMessage,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -187,24 +188,27 @@ const RegistrationForm = () => {
       <div>
         <h3 className="text-xl font-semibold mb-4">What type of property do you own?</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {propertyTypes.map((type) => (
-            <div
-              key={type.value}
-              onClick={() => setFormData({ ...formData, propertyType: type.value })}
-              className={`p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-md ${
-                formData.propertyType === type.value
-                  ? "border-green-500 bg-green-50"
-                  : "border-gray-200 hover:border-green-300"
-              }`}
-            >
-              <div className="text-center">
-                <div className="text-3xl mb-2">
-                  <type.icon className="mx-auto w-6 h-6 text-green-500" />
+          {propertyTypes.map((type) => {
+            const IconComponent = type.icon;
+            return (
+              <div
+                key={type.value}
+                onClick={() => setFormData({ ...formData, propertyType: type.value })}
+                className={`p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                  formData.propertyType === type.value
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-200 hover:border-green-300"
+                }`}
+              >
+                <div className="text-center">
+                  <div className="flex justify-center mb-2">
+                    <IconComponent className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div className="font-medium text-gray-800">{type.label}</div>
                 </div>
-                <div className="font-medium text-gray-900">{type.label}</div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -239,7 +243,7 @@ const RegistrationForm = () => {
           <Input
             id="phone"
             name="phone"
-            placeholder="+1 (555) 123-4567"
+            placeholder="+27 (111) 123-4567"
             value={formData.phone}
             onChange={handleChange}
           />
@@ -414,7 +418,7 @@ const RegistrationForm = () => {
       <div>
         <h3 className="text-lg font-semibold mb-4">Partnership Terms & Conditions</h3>
         <div className="bg-gray-50 rounded-lg p-6 max-h-96 overflow-y-auto mb-6">
-          <h4 className="font-semibold mb-3">TerraBook Property Partnership Agreement</h4>
+          <h4 className="font-semibold mb-3">GreenInn Property Partnership Agreement</h4>
           <div className="space-y-4 text-sm text-gray-700">
             <p><strong>1. Property Listing Terms:</strong> By registering your property with GreenInn, you agree to maintain accurate and up-to-date information about your property, including availability, pricing, and amenities.</p>
             <p><strong>2. Eco-Friendly Standards:</strong> You certify that your property meets our sustainability standards and will continue to implement eco-friendly practices throughout our partnership.</p>
@@ -450,12 +454,12 @@ const RegistrationForm = () => {
               checked={formData.marketingAccepted}
               onCheckedChange={(checked) => setFormData(prev => ({ ...prev, marketingAccepted: !!checked }))}
             />
-            <Label htmlFor="marketing" className="text-sm">I consent to receive marketing communications from TerraBook (optional)</Label>
+            <Label htmlFor="marketing" className="text-sm">I consent to receive marketing communications from GreenInn (optional)</Label>
           </div>
         </div>
 
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-800"><strong>🌱 Welcome to the TerraBook Family!</strong> Once approved, you'll receive access to your dashboard and our support team will help you optimize your listing for maximum visibility.</p>
+          <p className="text-sm text-green-800"><strong>🌱 Welcome to the GreenInn Family!</strong> Once approved, you'll receive access to your admin panel and our support team will help you optimize your listing for maximum visibility.</p>
         </div>
       </div>
     </div>
@@ -470,22 +474,26 @@ const RegistrationForm = () => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <Card className="shadow-xl border-0.5">
-            <CardHeader className="bg text-green-700 rounded-lg">
+          <Card className="shadow-xl border-0">
+            <CardHeader className="bg-gradient-green text-white rounded-t-lg">
               {/* Progress Steps */}
               <div className="flex justify-between items-center mb-6 overflow-x-auto">
                 {steps.map((step, index) => (
                   <div key={step.id} className="flex items-center min-w-0">
                     <div
                       className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                        currentStep >= step.id ? "bg-green-400 text-white" : "bg-white text-green-600"
+                        currentStep >= step.id
+                          ? "bg-white text-green-600"
+                          : "bg-green-400 text-white"
                       }`}
                     >
                       <step.icon className="h-5 w-5" />
                     </div>
                     {index < steps.length - 1 && (
                       <div
-                        className={`w-8 h-1 mx-2 ${currentStep > step.id ? "bg-white" : "bg-green-400"}`}
+                        className={`w-8 h-1 mx-2 ${
+                          currentStep > step.id ? "bg-white" : "bg-green-400"
+                        }`}
                       />
                     )}
                   </div>
@@ -502,37 +510,37 @@ const RegistrationForm = () => {
               {currentStep === 3 && renderStep3()}
               {currentStep === 4 && renderStep4()}
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8">
-              <Button
-                type = "button"
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={currentStep === 1}
-              >
-                Previous
-              </Button>
-              {currentStep < 4 ? (
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-8">
                 <Button
-                  type = "button"
-                  onClick={handleNext}
-                  disabled={currentStep === 1 && !formData.propertyType}
-                  className="bg-gradient-green"
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={currentStep === 1}
                 >
-                  Next Step
+                  Previous
                 </Button>
-              ) : (
-                <Button 
-                  type = "submit"
-                  className="bg-gradient-green"
-                  disabled={!formData.termsAccepted || !formData.privacyAccepted}
-                >
-                  Submit Registration
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                {currentStep < 4 ? (
+                  <Button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={currentStep === 1 && !formData.propertyType}
+                    className="bg-gradient-green"
+                  >
+                    Next Step
+                  </Button>
+                ) : (
+                  <Button 
+                    type="submit"
+                    className="bg-gradient-green"
+                    disabled={!formData.termsAccepted || !formData.privacyAccepted || isSubmitting}
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Registration"}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </form>
       </div>
     </section>

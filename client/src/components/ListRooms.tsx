@@ -1,61 +1,136 @@
-import { useState } from "react";
-import { Eye, Edit, Trash2, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Eye, Edit, Trash2, Search, ToggleLeft, ToggleRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAppContext } from "@/context/appContext.tsx";
+import { toast } from 'sonner';
+
+interface Room {
+  _id: string;
+  roomName: string;
+  roomType: string;
+  roomDescription: string;
+  pricePerNight: number;
+  amenities: string[];
+  isAvailable: boolean;
+}
 
 const ListRooms = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { getToken, axios } = useAppContext();
 
-  // Mock data for demonstration
-  const rooms = [
-    {
-      id: 1,
-      name: "Ocean View Double",
-      type: "Double Bed",
-      facilities: "Sea View, Room Service, Free WiFi",
-      pricePerNight: "R100",
-      status: "Available"
-    },
-    {
-      id: 2,
-      name: "Mountain Suite",
-      type: "Luxury Room",
-      facilities: "Mountain View, Spa Access, Mini Bar",
-      pricePerNight: "R200",
-      status: "Occupied"
-    },
-    {
-      id: 3,
-      name: "Family Paradise",
-      type: "Family Suite",
-      facilities: "Sea View, Balcony, Coffee Machine",
-      pricePerNight: "R400",
-      status: "Available"
-    },
-    {
-      id: 4,
-      name: "Cozy Single",
-      type: "Single Bed",
-      facilities: "Mountain View, Free WiFi, TV",
-      pricePerNight: "R120",
-      status: "Available"
-    },
-    {
-      id: 5,
-      name: "Executive Double",
-      type: "Double Bed",
-      facilities: "Room Service, Air Conditioning, Safe",
-      pricePerNight: "R370",
-      status: "Maintenance"
+  useEffect(() => {
+    fetchRooms();
+  }, []);
+
+  const fetchRooms = async () => {
+    try {
+      const token = await getToken();
+      const response = await axios.get("/api/rooms/owner", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        setRooms(response.data.rooms);
+      } else {
+        toast.error("Failed to fetch rooms");
+      }
+    } catch (error: any) {
+      console.error("Error fetching rooms:", error);
+      toast.error(error.response?.data?.message || "Error loading rooms");
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const handleToggleAvailability = async (roomId: string, currentStatus: boolean) => {
+    try {
+      const token = await getToken();
+      const response = await axios.post("/api/rooms/toggle-availability", 
+        { roomId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Room availability updated");
+        // Update local state
+        setRooms(prevRooms => 
+          prevRooms.map(room => 
+            room._id === roomId 
+              ? { ...room, isAvailable: !currentStatus }
+              : room
+          )
+        );
+      } else {
+        throw new Error(response.data.message || "Failed to toggle availability");
+      }
+    } catch (error: any) {
+      console.error("Error toggling availability:", error);
+      toast.error(error.response?.data?.message || "Error updating availability");
+    }
+  };
+
+  const handleDeleteRoom = async (roomId: string) => {
+    if (!confirm("Are you sure you want to delete this room? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const token = await getToken();
+      const response = await axios.delete(`/api/rooms/${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        toast.success("Room deleted successfully");
+        setRooms(prevRooms => prevRooms.filter(room => room._id !== roomId));
+      } else {
+        throw new Error(response.data.message || "Failed to delete room");
+      }
+    } catch (error: any) {
+      console.error("Error deleting room:", error);
+      toast.error(error.response?.data?.message || "Error deleting room");
+    }
+  };
 
   const filteredRooms = rooms.filter(room =>
-    room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    room.type.toLowerCase().includes(searchTerm.toLowerCase())
+    room.roomName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    room.roomType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    room.roomDescription?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getStatusBadge = (isAvailable: boolean) => {
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+        isAvailable 
+          ? "bg-green-100 text-green-800" 
+          : "bg-red-100 text-red-800"
+      }`}>
+        {isAvailable ? "Available" : "Unavailable"}
+      </span>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -70,7 +145,7 @@ const ListRooms = () => {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>All Rooms</CardTitle>
+            <CardTitle>All Rooms ({rooms.length})</CardTitle>
             <div className="flex space-x-2">
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -85,47 +160,95 @@ const ListRooms = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Facilities</TableHead>
-                <TableHead>Price/Night</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRooms.map((room) => (
-                <TableRow key={room.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{room.name}</p>
-                      <p className="text-sm text-gray-600">{room.type}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <p className="text-sm">{room.facilities}</p>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{room.pricePerNight}</span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {filteredRooms.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No rooms found. Add your first room to get started.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Room Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Price/Night</TableHead>
+                  <TableHead>Amenities</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredRooms.map((room) => (
+                  <TableRow key={room._id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{room.roomName}</p>
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {room.roomDescription}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="capitalize">{room.roomType?.toLowerCase()}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">R{room.pricePerNight}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1 max-w-[200px]">
+                        {room.amenities?.slice(0, 3).map((amenity, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700"
+                          >
+                            {amenity}
+                          </span>
+                        ))}
+                        {room.amenities?.length > 3 && (
+                          <span className="text-xs text-gray-500">
+                            +{room.amenities.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(room.isAvailable)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleAvailability(room._id, room.isAvailable)}
+                          title={room.isAvailable ? "Mark as unavailable" : "Mark as available"}
+                        >
+                          {room.isAvailable ? (
+                            <ToggleRight className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4 text-gray-400" />
+                          )}
+                        </Button>
+                        <Button variant="ghost" size="sm" title="View details">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Edit room">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteRoom(room._id)}
+                          title="Delete room"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 

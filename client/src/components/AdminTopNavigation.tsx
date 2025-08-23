@@ -2,21 +2,51 @@ import { User, Settings, Bell, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useAppContext } from "@/context/appContext.tsx";
 
 interface AdminTopNavigationProps {
-  businessName?: string;
   propertyType: string;
   className?: string;
   onSettingsClick?: () => void;
 }
 
 const AdminTopNavigation = ({ 
-  businessName = "My Business", 
   propertyType,
   className = "",
   onSettingsClick
 }: AdminTopNavigationProps) => {
   const navigate = useNavigate();
+  const { getToken, axios } = useAppContext();
+  const [businessName, setBusinessName] = useState("My Business");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAccommodationData();
+  }, []);
+
+  const fetchAccommodationData = async () => {
+    try {
+      const token = await getToken();
+      const response = await axios.get("/api/accommodations/owner", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success && response.data.accommodations.length > 0) {
+        const accommodation = response.data.accommodations[0];
+        setBusinessName(accommodation.businessName || "My Business");
+      } else {
+        setBusinessName("My Business");
+      }
+    } catch (error: any) {
+      console.error("Error fetching accommodation data:", error);
+      setBusinessName("My Business");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getPropertyTypeDisplay = (type: string) => {
     switch(type) {
@@ -36,6 +66,27 @@ const AdminTopNavigation = ({
     }
     return 'bg-blue-100 text-blue-800';
   };
+
+  if (loading) {
+    return (
+      <div className={`bg-white border-b border-gray-200 px-6 py-4 ${className}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Building className="h-5 w-5 text-gray-600" />
+              <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="h-5 w-20 bg-gray-200 rounded-full animate-pulse"></div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-9 bg-gray-200 rounded-full animate-pulse"></div>
+            <div className="h-9 w-9 bg-gray-200 rounded-full animate-pulse"></div>
+            <div className="h-9 w-9 bg-gray-200 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`bg-white border-b border-gray-200 px-6 py-4 ${className}`}>

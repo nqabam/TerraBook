@@ -1,14 +1,14 @@
 import { Building2, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useClerk, useUser, UserButton } from "@clerk/clerk-react";
+import { useClerk, UserButton } from "@clerk/clerk-react";
+import { useAppContext } from "@/context/appContext";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate();
   const { openSignIn } = useClerk();
-  const { user } = useUser();
+
+  const { user, navigate } = useAppContext()
 
 
 
@@ -38,15 +38,21 @@ const Navigation = () => {
               Support
             </a>
             {user ? 
-            (<UserButton afterSignOutUrl="/" />
-            ):(<Button
-                  variant="outline" 
-                  className="w-fit border-green-100 bg-green-600 text-white hover:bg-green-200"
-                  onClick={() => openSignIn()}
-
-                >
-                  Sign In
-                </Button>)
+            (
+              <UserButton>
+                <UserButton.MenuItems>
+                  <UserButton.Action label="My Property" labelIcon={<Building2></Building2>} onClick={() => navigate('/admin')} />
+                </UserButton.MenuItems>
+              </UserButton>
+            ) : (
+              <Button
+                variant="outline" 
+                className="w-fit border-green-100 bg-green-600 text-white hover:bg-green-200"
+                onClick={() => openSignIn()}
+              >
+                Sign In
+              </Button>
+            )
             }
           </div>
 

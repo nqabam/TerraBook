@@ -1,32 +1,33 @@
 import mongoose from "mongoose";
 
-const PricingSchema = new mongoose.Schema({
-  baseRate: { type: String, required: true },
-  currency: { type: String, default: "ZAR" },
-  specialOffers: { type: String }
-});
-
-const AccommodationSchema = new mongoose.Schema(
-  {
-    propertyType: { type: String, required: true },
+const accommodationSchema = new mongoose.Schema({
+    propertyType: { 
+        type: String, 
+        enum: ["hotel", "restaurant", "guesthouse", "resort", "cafe", "hostel"], 
+        required: true 
+    },
     businessName: { type: String, required: true },
-    email: { type: String, required: true, lowercase: true, trim: true },
+    email: { type: String, required: true },
     phone: { type: String, required: true },
-    owner: { type: String, required: true, ref: "User" },
+    owner: { type: String, ref: "User", required: true },
     website: { type: String },
     address: { type: String, required: true },
     city: { type: String, required: true },
-    province: { type: String, required: true },
+    province: { 
+        type: String, 
+        enum: ["EC", "FS", "GP", "KZN", "NC", "NW", "WC"],
+        required: true 
+    },
     description: { type: String },
-    certifications: [{ type: String }],
     amenities: [{ type: String }],
-    images: [{ type: String }],
-    pricing: { type: PricingSchema, required: true },
+    certifications: [{ type: String }],
     termsAccepted: { type: Boolean, required: true },
     privacyAccepted: { type: Boolean, required: true },
-    marketingAccepted: { type: Boolean, default: false }
-  },
-  { timestamps: true }
-);
+    marketingAccepted: { type: Boolean, default: false },
+}, {
+    timestamps: true,
+});
 
-export default mongoose.model("Accommodation", AccommodationSchema);
+const Accommodation = mongoose.model("Accommodation", accommodationSchema);
+
+export default Accommodation;
