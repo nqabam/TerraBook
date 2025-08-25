@@ -7,20 +7,17 @@ import CategoryTabs from "@/components/travelersComponents/CategoryTabs";
 import ListingCard from "@/components/travelersComponents/ListingCard";
 import { Leaf, Heart, Shield, Plus, Handshake } from "lucide-react";
 import { toast } from "sonner";
-import { useIsMobile } from "@/hooks/use-mobile";
-import type { Listing, Event } from "@shared/schema";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/travelersComponents/Navigation"; // Import the Navigation component
 
 export default function Landing() {
   const [activeCategory, setActiveCategory] = useState("accommodations");
   const [activeSubcategory, setActiveSubcategory] = useState("Hotels");
-  const isMobile = useIsMobile();
   const navigate = useNavigate();
 
   // Fetch listings for active category - fixed query key format
   const { data: listings = [], isLoading: isLoadingListings } = useQuery<Listing[]>({
-    queryKey: ['/api/listings', activeCategory, activeSubcategory],
+    queryKey: ['/api/accommodations', activeCategory, activeSubcategory],
     enabled: !!activeCategory && !!activeSubcategory,
   });
 
@@ -30,8 +27,7 @@ export default function Landing() {
   });
 
   const handleSearch = (params: SearchParams) => {
-    toast({
-      title: "Search initiated",
+    toast("Search initiated", {
       description: `Searching for accommodations in ${params.location}`,
     });
     // In a real app, this would navigate to search results or filter listings

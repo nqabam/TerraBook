@@ -237,7 +237,7 @@ const Profile = () => {
 
             {/* Admin Panel Button */}
             <div className="mt-4">
-              <Button onClick={() => navigate("/admin")} className="bg-green-600 hover:bg-green-700 text-white">
+              <Button onClick={() => navigate("/business/admin")} className="bg-green-600 hover:bg-green-700 text-white">
                 <Settings className="h-4 w-4 mr-2" />
                 Admin Panel
               </Button>

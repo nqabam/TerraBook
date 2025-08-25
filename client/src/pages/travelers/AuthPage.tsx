@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/travelersUI/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/travelersUI/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/travelersUI/card";
 import { Input } from "@/components/ui/travelersUI/input";
 import { Label } from "@/components/ui/travelersUI/label";
 import { Separator } from "@/components/ui/travelersUI/separator";
@@ -23,7 +23,6 @@ import {
 import { FaGoogle, FaApple, FaFacebook } from "react-icons/fa";
 
 export default function AuthPage() {
-  const location = useLocation();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("login");

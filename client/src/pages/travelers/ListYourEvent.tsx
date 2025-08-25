@@ -19,7 +19,6 @@ import {
 import { 
   Calendar,
   Users,
-  MapPin,
   Camera,
   Globe,
   Award,
@@ -30,6 +29,7 @@ import {
   Zap
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAppContext } from "@/context/appContext"; // Import the AppContext
 
 const eventFormSchema = z.object({
   eventName: z.string().min(3, "Event name must be at least 3 characters"),
@@ -51,6 +51,7 @@ type EventFormData = z.infer<typeof eventFormSchema>;
 
 export default function ListYourEvent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { axios, getToken } = useAppContext(); // Get axios instance and getToken from context
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
@@ -76,21 +77,29 @@ export default function ListYourEvent() {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Get authentication token
+      const token = await getToken();
       
-      toast({
-        title: "Event Submission Received!",
-        description: "We'll review your event and publish it within 3 business days.",
+      // Send data to the backend API using axios from context
+      const response = await axios.post('/api/events', data, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
-      
-      form.reset();
-    } catch (error) {
+
+      if (response.data.success) {
+        toast("Event Submission Received!", {
+          description: "We'll review your event and publish it within 3 business days.",
+        });
+        
+        form.reset();
+      } else {
+        throw new Error(response.data.message || 'Failed to submit event');
+      }
+    } catch (error: any) {
       console.error('Form submission error:', error);
-      toast({
-        title: "Submission Failed",
-        description: "Please try again or contact support.",
-        variant: "destructive",
+      toast("Submission Failed", {
+        description: error.response?.data?.message || error.message || "Please try again or contact support.",
       });
     } finally {
       setIsSubmitting(false);

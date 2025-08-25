@@ -25,9 +25,9 @@ const BottomNavigation = () => {
 
 
   const navItems: NavItem[] = [
-  { id: 'home', label: 'Home', icon: Home, path: '/' },
-  { id: 'services', label: 'Services', icon: Briefcase, path: '/services' },
-  { id: 'contact', label: 'Contact', icon: Phone, path: '/contact' },
+  { id: 'home', label: 'Home', icon: Home, path: '/business' },
+  { id: 'services', label: 'Services', icon: Briefcase, path: '/business/services' },
+  { id: 'contact', label: 'Contact', icon: Phone, path: '/business/contact' },
   ...(user
   ? [{
       id: 'profile',
@@ -35,7 +35,7 @@ const BottomNavigation = () => {
       icon: User,
       action: () => {
         const hasRegisteredProperty = user?.publicMetadata?.hasRegisteredProperty;
-        navigate(hasRegisteredProperty ? '/profile' : '/profile');
+        navigate(hasRegisteredProperty ? '/business/profile' : '/business/profile');
       },
     }]
   : []),

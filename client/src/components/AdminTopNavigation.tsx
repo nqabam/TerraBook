@@ -126,7 +126,7 @@ const AdminTopNavigation = ({
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/business/profile')}
             title="Profile"
           >
             <User className="h-5 w-5" />

@@ -12,9 +12,9 @@ const HeroSection = () => {
     if (!isLoaded) return; // optional: prevent premature clicks while Clerk is loading
 
     if (user) {
-      navigate("/register");
+      navigate("/business/register");
     } else {
-      openSignIn();
+      openSignIn({});
     }
   };
 

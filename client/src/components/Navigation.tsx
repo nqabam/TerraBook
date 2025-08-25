@@ -28,27 +28,27 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <a onClick = { () => navigate('/features') } className="text-black hover:text-green-700 transition-colors">
+            <a onClick = { () => navigate('/business/features') } className="text-black hover:text-green-700 transition-colors">
               Features
             </a>
-            <a onClick = { () => navigate('pricing') } className="text-black hover:text-green-700 transition-colors">
+            <a onClick = { () => navigate('/business/pricing') } className="text-black hover:text-green-700 transition-colors">
               Pricing
             </a>
-            <a onClick = { () => navigate('/support') }  className="text-black hover:text-green-700 transition-colors">
+            <a onClick = { () => navigate('/business/support') }  className="text-black hover:text-green-700 transition-colors">
               Support
             </a>
             {user ? 
             (
               <UserButton>
                 <UserButton.MenuItems>
-                  <UserButton.Action label="My Property" labelIcon={<Building2></Building2>} onClick={() => navigate('/admin')} />
+                  <UserButton.Action label="My Property" labelIcon={<Building2></Building2>} onClick={() => navigate('/business/admin')} />
                 </UserButton.MenuItems>
               </UserButton>
             ) : (
               <Button
                 variant="outline" 
                 className="w-fit border-green-100 bg-green-600 text-white hover:bg-green-200"
-                onClick={() => openSignIn()}
+                onClick={() => openSignIn({})}
               >
                 Sign In
               </Button>

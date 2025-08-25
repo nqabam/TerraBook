@@ -9,6 +9,7 @@ import accommodationRouter from "./routes/accommodationRoutes.js";
 import connectCloudinary from "./configs/cloudinary.js";
 import roomRouter from "./routes/roomRoutes.js";
 import menuItemRouter from "./routes/menuItemRoutes.js";
+import eventRouter from "./routes/eventRoutes.js";
 
 connectDB(); // Connect to MongoDB
 connectCloudinary(); // Connect to Cloudinary
@@ -24,10 +25,11 @@ app.use(clerkMiddleware());
 app.use("/api/clerk", clerkWebhooks)
 
 app.get('/', (req, res) => res.send("API is running..."))
-app.use('api/user', userRouter)
+app.use('/api/user', userRouter)
 app.use('/api/accommodations', accommodationRouter)
 app.use('/api/rooms', roomRouter)
 app.use('/api/menu-items', menuItemRouter)
+app.use('/api/events', eventRouter)
 
 const PORT = process.env.PORT || 3000;
 
