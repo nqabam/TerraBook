@@ -9,6 +9,7 @@ import { Leaf, Heart, Shield, Plus, Handshake } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/travelersComponents/Navigation"; // Import the Navigation component
+import TravelChatbot from "@/components/TravelChatbot";
 
 export default function Landing() {
   const [activeCategory, setActiveCategory] = useState("accommodations");
@@ -250,6 +251,7 @@ export default function Landing() {
           </div>
         </div>
       </section>
+      <TravelChatbot />
     </div>
   );
 }
