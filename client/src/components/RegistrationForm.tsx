@@ -190,8 +190,8 @@ const RegistrationForm = () => {
 
 const subscriptionPlans = [
   { value: "starter", label: "Starter", price: "Free", icon: Star, description: "Perfect for getting started" },
-  { value: "professional", label: "Professional", price: "$39/mo", icon: Zap, description: "Enhanced features for growth", popular: true },
-  { value: "premium", label: "Premium", price: "$99/mo", icon: Crown, description: "Complete solution for established businesses" }
+  { value: "professional", label: "Professional", price: "R1,200/pm", icon: Zap, description: "Enhanced features for growth", popular: true },
+  { value: "premium", label: "Premium", price: "R3,000/pm", icon: Crown, description: "Complete solution for established businesses" }
 ];
 
 const renderStep1 = () => (
