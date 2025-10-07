@@ -53,6 +53,7 @@ const TravelChatbot = () => {
   const [generatedItinerary, setGeneratedItinerary] = useState<ItineraryItem[]>([]);
   const [selectedView, setSelectedView] = useState<'timeline' | 'map'>('timeline');
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [modificationField, setModificationField] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const conversationSteps = [
@@ -168,8 +169,30 @@ const TravelChatbot = () => {
 
     addMessage(valueToSend, true);
     
+    // Handle modification mode
+    if (modificationField) {
+      const field = modificationField as keyof TripPreferences;
+      
+      // Handle interests as array
+      if (field === 'interests') {
+        setPreferences(prev => ({ 
+          ...prev, 
+          [field]: [...(prev.interests || []), valueToSend] 
+        }));
+      } else {
+        setPreferences(prev => ({ ...prev, [field]: valueToSend }));
+      }
+      
+      addBotMessage(`Great! I've updated your ${modificationField}. Would you like to modify anything else?`);
+      setModificationField(null);
+      
+      // Regenerate itinerary with updated preferences
+      setTimeout(() => {
+        generateItinerary();
+      }, 1000);
+    }
     // Process user input based on current step
-    if (currentStep < conversationSteps.length) {
+    else if (currentStep < conversationSteps.length) {
       const currentField = conversationSteps[currentStep].field as keyof TripPreferences;
       
       // Handle interests as array
@@ -204,22 +227,67 @@ const TravelChatbot = () => {
   };
 
   const handlePostItineraryMessage = (message: string) => {
-    // Handle various post-itinerary requests
-    if (message.toLowerCase().includes('more activities') || message.toLowerCase().includes('add activit')) {
-      addBotMessage("I'd be happy to add more activities! What type of activities are you interested in? (e.g., hiking, museums, shopping)");
-    } else if (message.toLowerCase().includes('eco') || message.toLowerCase().includes('sustainable')) {
-      addBotMessage("Great choice! Let me find more eco-friendly options for you. Are you looking for sustainable accommodations, restaurants, or activities?");
-    } else if (message.toLowerCase().includes('budget')) {
+    const lowerMessage = message.toLowerCase();
+    
+    // Handle modification requests by showing specific field suggestions
+    if (lowerMessage.includes('budget')) {
+      setModificationField('budget');
       addBotMessage("Let's adjust your budget. What's your new budget range?");
-    } else if (message.toLowerCase().includes('date') || message.toLowerCase().includes('change')) {
+    } 
+    else if (lowerMessage.includes('destination') || lowerMessage.includes('where') || lowerMessage.includes('place')) {
+      setModificationField('destination');
+      addBotMessage("Where would you like to travel instead?");
+    }
+    else if (lowerMessage.includes('date') || lowerMessage.includes('when')) {
+      setModificationField('dates');
       addBotMessage("When would you prefer to travel instead?");
-    } else if (message.toLowerCase().includes('restaurant') || message.toLowerCase().includes('food')) {
+    }
+    else if (lowerMessage.includes('duration') || lowerMessage.includes('nights') || lowerMessage.includes('stay')) {
+      setModificationField('duration');
+      addBotMessage("How many nights would you like to stay?");
+    }
+    else if (lowerMessage.includes('group') || lowerMessage.includes('people') || lowerMessage.includes('person')) {
+      setModificationField('groupSize');
+      addBotMessage("How many people will be traveling?");
+    }
+    else if (lowerMessage.includes('interest') || lowerMessage.includes('activity')) {
+      setModificationField('interests');
+      addBotMessage("What are your main interests?");
+    }
+    else if (lowerMessage.includes('style') || lowerMessage.includes('travel style')) {
+      setModificationField('travelStyle');
+      addBotMessage("What's your travel style?");
+    }
+    else if (lowerMessage.includes('more activities') || lowerMessage.includes('add activit')) {
+      addBotMessage("I'd be happy to add more activities! What type of activities are you interested in? (e.g., hiking, museums, shopping)");
+    } 
+    else if (lowerMessage.includes('eco') || lowerMessage.includes('sustainable')) {
+      addBotMessage("Great choice! Let me find more eco-friendly options for you. Are you looking for sustainable accommodations, restaurants, or activities?");
+    }
+    else if (lowerMessage.includes('restaurant') || lowerMessage.includes('food')) {
       addBotMessage("I can help you find more dining options! What type of cuisine are you interested in?");
-    } else if (message.toLowerCase().includes('cultural') || message.toLowerCase().includes('experience')) {
+    }
+    else if (lowerMessage.includes('cultural') || lowerMessage.includes('experience')) {
       addBotMessage("Cultural experiences make trips memorable! Are you interested in museums, local festivals, historical sites, or traditional workshops?");
-    } else {
+    }
+    else {
       addBotMessage("I can help you modify your itinerary or answer any questions about your trip. What would you like to change or know more about?");
     }
+  };
+
+  const getCurrentSuggestions = () => {
+    // If we're in modification mode, show suggestions for the specific field
+    if (modificationField) {
+      const step = conversationSteps.find(step => step.field === modificationField);
+      return step ? step.suggestions : [];
+    }
+    
+    if (currentStep < conversationSteps.length) {
+      return conversationSteps[currentStep].suggestions;
+    } else if (showItinerary) {
+      return postItinerarySuggestions.map(s => s.text);
+    }
+    return [];
   };
 
   const generateItinerary = async () => {
@@ -471,15 +539,6 @@ You can also continue chatting with me to modify your itinerary or ask questions
     if (e.key === 'Enter') {
       handleSendMessage();
     }
-  };
-
-  const getCurrentSuggestions = () => {
-    if (currentStep < conversationSteps.length) {
-      return conversationSteps[currentStep].suggestions;
-    } else if (showItinerary) {
-      return postItinerarySuggestions.map(s => s.text);
-    }
-    return [];
   };
 
   const renderSuggestionButton = (suggestion: string, index: number) => (
